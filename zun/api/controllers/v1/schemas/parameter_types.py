@@ -97,6 +97,11 @@ cpu = {
     'maximum': CONF.maximum_cpus,
 }
 
+cpu_policy = {
+    'type': ['string', 'null'],
+    'enum': ['dedicated', 'shared', None]
+}
+
 # TODO(pksingh) Memory provided must be in MBs
 # Will find another way if people dont find it useful.
 memory = {

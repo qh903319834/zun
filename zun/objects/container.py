@@ -67,7 +67,8 @@ class Container(base.ZunPersistentObject, base.ZunObject):
     # Version 1.34: Add privileged to container
     # Version 1.35: Add 'healthcheck' attribute
     # Version 1.36: Add 'get_count' method
-    VERSION = '1.36'
+    # Version 1.37: Add cpu_policy and cpuset
+    VERSION = '1.37'
 
     fields = {
         'id': fields.IntegerField(),
@@ -78,6 +79,9 @@ class Container(base.ZunPersistentObject, base.ZunObject):
         'user_id': fields.StringField(nullable=True),
         'image': fields.StringField(nullable=True),
         'cpu': fields.FloatField(nullable=True),
+        'cpu_policy': fields.StringField(nullable=True),
+        'cpuset_cpus': fields.StringField(nullable=True),
+        'cpuset_mems': fields.StringField(nullable=True),
         'memory': fields.StringField(nullable=True),
         'command': fields.ListOfStringsField(nullable=True),
         'status': z_fields.ContainerStatusField(nullable=True),

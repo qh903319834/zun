@@ -226,8 +226,15 @@ class ComputeNodeTracker(object):
         mem_usage = usage['memory']
         cpus_usage = usage.get('cpu', 0)
         disk_usage = usage['disk']
+        if 'cpuset_cpus' in usage.keys():
+            cpuset_cpus_usage = usage['cpuset_cpus']
+            numa_node_id = usage['node']
+        else:
+            cpuset_cpus_usage = None
+            numa_node_id = 0
 
         cn = self.compute_node
+        numa_topology = cn.numa_topology.nodes
         cn.mem_used += sign * mem_usage
         cn.cpu_used += sign * cpus_usage
         cn.disk_used += sign * disk_usage
@@ -238,6 +245,14 @@ class ComputeNodeTracker(object):
         cn.running_containers += sign * 1
 
         # TODO(Shunli): Calculate the numa usage here
+        if cpuset_cpus_usage:
+            for numa_node in numa_topology:
+                if numa_node.id == numa_node_id:
+                    numa_node.mem_available = numa_node.mem_available - mem_usage * sign
+                    if sign > 0:
+                        numa_node.pin_cpus(cpuset_cpus_usage)
+                    else:
+                        numa_node.unpin_cpus(cpuset_cpus_usage)
 
     def _update(self, compute_node):
         if not self._resource_change(compute_node):
@@ -275,6 +290,7 @@ class ComputeNodeTracker(object):
         # No migration for docker, is there will be orphan container? Nova has.
 
         cn = self.compute_node
+        print('compute_node_tracker.py.cn.numa_topology', cn.numa_topology.nodes)
 
         # update the compute_node
         self._update(cn)
@@ -302,7 +318,11 @@ class ComputeNodeTracker(object):
                  'cpu': container.cpu or 0,
                  'disk': container.disk or 0}
         # update numa usage here
-
+        if container.cpuset_cpus:
+            usage['cpuset_cpus'] = set(
+                [int(i) for i in container.cpuset_cpus.split(',')])
+            # usage['cpuset_cpus'] = set(container.cpuset_cpus)
+            usage['node'] = int(container.cpuset_mems)
         return usage
 
     @utils.synchronized(COMPUTE_RESOURCE_SEMAPHORE)

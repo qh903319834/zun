@@ -32,12 +32,14 @@ class HostState(object):
         self.mem_total = 0
         self.mem_free = 0
         self.mem_used = 0
+        self.mem_available = 0
         self.cpus = 0
         self.cpu_used = 0
         self.disk_total = 0
         self.disk_used = 0
         self.numa_topology = None
         self.labels = None
+        self.total_containers = 0
         self.pci_stats = None
         self.disk_quota_supported = False
         self.runtimes = []
@@ -70,6 +72,7 @@ class HostState(object):
         self.disk_used = compute_node.disk_used
         self.numa_topology = compute_node.numa_topology
         self.labels = compute_node.labels
+        self.total_containers = compute_node.total_containers
         self.pci_stats = pci_stats.PciDeviceStats(
             stats=compute_node.pci_device_pools)
         self.disk_quota_supported = compute_node.disk_quota_supported

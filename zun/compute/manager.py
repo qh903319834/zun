@@ -249,6 +249,7 @@ class Manager(periodic_task.PeriodicTasks):
             created_container = self._do_container_create(
                 context, container, requested_networks, requested_volumes,
                 pci_requests, limits)
+            self.inventory_host(context)
             if run:
                 self._do_container_start(context, created_container)
 
@@ -510,6 +511,7 @@ class Manager(periodic_task.PeriodicTasks):
         # Remove the claimed resource
         rt = self._get_resource_tracker()
         rt.remove_usage_from_container(context, container, True)
+        self.inventory_host(context)
 
     def _delete_sandbox(self, context, container, reraise=False):
         sandbox_id = container.get_sandbox_id()
