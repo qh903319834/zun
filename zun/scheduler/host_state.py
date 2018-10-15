@@ -14,6 +14,7 @@ from oslo_log.log import logging
 
 from zun.common import utils
 from zun.pci import stats as pci_stats
+from zun.scheduler import placement_client
 
 LOG = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ class HostState(object):
 
         # Resource oversubscription values for the compute host:
         self.limits = {}
+        self.placement_client = placement_client.SchedulerReportClient()
 
     def update(self, compute_node=None, service=None):
         """Update information about a host"""
@@ -55,6 +57,7 @@ class HostState(object):
                 LOG.debug('Update host state from compute node: %s',
                           compute_node)
                 self._update_from_compute_node(compute_node)
+                self._update_from_placement(compute_node)
             if service is not None:
                 LOG.debug('Update host state with service: %s', service)
                 self.service = service
@@ -77,6 +80,9 @@ class HostState(object):
             stats=compute_node.pci_device_pools)
         self.disk_quota_supported = compute_node.disk_quota_supported
         self.runtimes = compute_node.runtimes
+
+    def _update_from_placement(self, compute_node):
+        self.placement_client.update_local_numa_topology(compute_node)
 
     def __repr__(self):
         return ("%(host)s ram: %(free_ram)sMB "

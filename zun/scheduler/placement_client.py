@@ -11,6 +11,7 @@
 #    under the License.
 
 import functools
+import json
 import zun.conf
 
 from keystoneauth1 import exceptions as ks_exc
@@ -265,3 +266,34 @@ class SchedulerReportClient(object):
                  'code': r.status_code,
                  'text': r.text})
         return r.status_code == 200
+
+    @safe_connect
+    def update_local_numa_topology(self, compute_node):
+        rp_uuid = compute_node.uuid
+        resp = self.get("/resource_providers/%s/numa_topologies" % rp_uuid,
+                        version='1.15')
+        if resp.status_code != 200:
+            placement_req_id = get_placement_request_id(resp)
+            LOG.error(
+                "[%(placement_req_id)s] Failed to retrieve NUMA Topology from "
+                "placement API for resource provider with UUID %(uuid)s. Got "
+                "%(status_code)d: %(err_text)s.",
+                {'placement_req_id': placement_req_id, 'uuid': rp_uuid,
+                 'status_code': resp.status_code, 'err_text': resp.text})
+            return
+        total_numa_topology = resp.json()
+        print('placement_client.py.total_numa_from_resp',
+              total_numa_topology['numa_topologies'])
+        print('placement_client.py.compute_numa_node',
+              compute_node.numa_topology.nodes)
+        numa_topology_nodes = []
+        for node in compute_node.numa_topology.nodes:
+            for cell in total_numa_topology['numa_topologies']:
+                if node.id == cell['id']:
+                    node.cpuset = set(cell['cpuset'])
+                    node.pinned_cpus = set(cell['pinned_cpus'])
+                    node.mem_available -= cell['memory_usage']
+                    numa_topology_nodes.append(node)
+        print('placement_client.py.updated_numa_topology_nodes',
+              numa_topology_nodes)
+        compute_node.numa_topology.nodes = numa_topology_nodes
