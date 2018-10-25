@@ -33,6 +33,7 @@ from zun.common import exception
 from zun.common.i18n import _
 import zun.conf
 from zun.db.sqlalchemy import models
+import uuid
 
 profiler_sqlalchemy = importutils.try_import('osprofiler.sqlalchemy')
 
@@ -740,7 +741,8 @@ class Connection(object):
     def create_compute_node(self, context, values):
         # ensure defaults are present for new compute nodes
         if not values.get('uuid'):
-            values['uuid'] = uuidutils.generate_uuid()
+            values['uuid'] = str(
+                uuid.uuid5(uuid.NAMESPACE_DNS, str(values['hostname'])))
 
         compute_node = models.ComputeNode()
         compute_node.update(values)
