@@ -13,6 +13,7 @@
 
 import itertools
 
+from re import split
 from zun.api.controllers import link
 from zun.common.policies import container as policies
 
@@ -51,6 +52,7 @@ _basic_keys = (
     'cpu_policy',
     'cpuset_cpus',
     'cpuset_mems',
+    'numa_topology',
 )
 
 
@@ -71,6 +73,17 @@ def format_container(context, url, container):
                         'bookmark', url,
                         'containers', value,
                         bookmark=True)])
+        elif key == 'cpu_policy':
+            if value == 'dedicated' and container['cpuset_cpus'] is not None:
+                cpuset_cpus = [int(cpu) for cpu in
+                               split(',', container['cpuset_cpus'])]
+                yield ('numa_topology',
+                       {"cpu": {container['cpuset_mems']: cpuset_cpus},
+                        "memory": {
+                            container['cpuset_mems']: container['memory']}})
+            else:
+                yield ('numa_topology', None)
+            yield (key, value)
         else:
             yield (key, value)
 
