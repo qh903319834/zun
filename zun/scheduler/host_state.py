@@ -82,7 +82,8 @@ class HostState(object):
         self.runtimes = compute_node.runtimes
 
     def _update_from_placement(self, compute_node):
-        self.placement_client.update_local_numa_topology(compute_node)
+        nodes = self.placement_client.update_local_numa_topology(compute_node)
+        self.numa_topology.nodes = nodes
 
     def __repr__(self):
         return ("%(host)s ram: %(free_ram)sMB "

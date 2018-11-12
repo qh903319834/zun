@@ -282,18 +282,15 @@ class SchedulerReportClient(object):
                  'status_code': resp.status_code, 'err_text': resp.text})
             return
         total_numa_topology = resp.json()
-        print('placement_client.py.total_numa_from_resp',
-              total_numa_topology['numa_topologies'])
-        print('placement_client.py.compute_numa_node',
-              compute_node.numa_topology.nodes)
+        LOG.debug('numa_topology_from_placement: %s' %
+                  total_numa_topology['numa_topologies'])
         numa_topology_nodes = []
         for node in compute_node.numa_topology.nodes:
             for cell in total_numa_topology['numa_topologies']:
                 if node.id == cell['id']:
                     node.cpuset = set(cell['cpuset'])
                     node.pinned_cpus = set(cell['pinned_cpus'])
-                    node.mem_available -= cell['memory_usage']
+                    node.mem_available = node.mem_total - cell['memory_usage']
                     numa_topology_nodes.append(node)
-        print('placement_client.py.updated_numa_topology_nodes',
-              numa_topology_nodes)
-        compute_node.numa_topology.nodes = numa_topology_nodes
+        LOG.debug('updated_numa_topology_nodes: %s' % numa_topology_nodes)
+        return numa_topology_nodes
