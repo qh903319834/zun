@@ -12,6 +12,8 @@
 
 import pecan
 
+from oslo_serialization import jsonutils
+from re import split
 from zun.api.controllers import base
 from zun.api.controllers.v1 import collection
 from zun.api.controllers.v1.views import hosts_view as view
@@ -106,4 +108,32 @@ class HostController(base.Controller):
         context = pecan.request.context
         policy.enforce(context, "host:get", action="host:get")
         host = _get_host(host_ident)
+        host.containers = jsonutils.dumps(
+            self._get_container_collection(host.hostname))
         return view.format_host(pecan.request.host_url, host)
+
+    def _get_container_collection(self, hostname):
+        context = pecan.request.context
+        containers_objs = objects.Container.list_by_host(context, host=hostname)
+        containers = []
+        for obj in containers_objs:
+            if obj.cpu_policy == 'dedicated' and obj.cpuset_cpus is not None:
+                cpuset_cpus = [int(cpu) for cpu in split(',', obj.cpuset_cpus)]
+                containers.append(dict(hostname=obj.name,
+                                       memory_mb=int(obj.memory),
+                                       name=obj.hostname,
+                                       numa_topology={"cpu": {
+                                           obj.cpuset_mems: cpuset_cpus},
+                                                      "memory": {
+                                                          obj.cpuset_mems: int(
+                                                              obj.memory)}},
+                                       uuid=obj.uuid,
+                                       vcpus=int(obj.cpu)))
+            else:
+                containers.append(dict(hostname=obj.name,
+                                       memory_mb=int(obj.memory),
+                                       name=obj.hostname,
+                                       numa_topology=None,
+                                       uuid=obj.uuid,
+                                       vcpus=int(obj.cpu)))
+        return containers

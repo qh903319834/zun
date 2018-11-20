@@ -34,7 +34,8 @@ class ComputeNode(base.ZunPersistentObject, base.ZunObject):
     # Version 1.10: Add disk_total, disk_used columns
     # Version 1.11: Add disk_quota_supported field
     # Version 1.12: Add runtimes field
-    VERSION = '1.12'
+    # Version 1.13: Add containers field
+    VERSION = '1.13'
 
     fields = {
         'uuid': fields.UUIDField(read_only=True, nullable=False),
@@ -63,6 +64,7 @@ class ComputeNode(base.ZunPersistentObject, base.ZunObject):
         'disk_used': fields.IntegerField(nullable=False),
         'disk_quota_supported': fields.BooleanField(nullable=False),
         'runtimes': fields.ListOfStringsField(nullable=True),
+        'containers': fields.StringField(nullable=True),
     }
 
     @staticmethod
@@ -75,6 +77,8 @@ class ComputeNode(base.ZunPersistentObject, base.ZunObject):
                 numa_obj = NUMATopology._from_dict(
                     db_compute_node['numa_topology'])
                 compute_node.numa_topology = numa_obj
+            elif field == 'containers':
+                compute_node.containers = None
             else:
                 setattr(compute_node, field, db_compute_node[field])
 

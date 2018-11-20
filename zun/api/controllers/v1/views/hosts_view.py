@@ -13,6 +13,7 @@
 
 import itertools
 
+from oslo_serialization import jsonutils
 from zun.api.controllers import link
 
 
@@ -33,6 +34,7 @@ _basic_keys = (
     'disk_total',
     'disk_quota_supported',
     'runtimes',
+    'containers',
 )
 
 
@@ -48,6 +50,8 @@ def format_host(url, host):
                     'bookmark', url,
                     'hosts', value,
                     bookmark=True)])
+        elif key == 'containers':
+            yield ('containers', jsonutils.loads(value) if value else None)
         else:
             yield (key, value)
 
